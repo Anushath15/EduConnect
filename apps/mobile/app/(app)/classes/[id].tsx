@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, Modal, TextInput,
 } from "react-native"
-import { useLocalSearchParams } from "expo-router"
+import { useLocalSearchParams, router } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 import { api } from "../../../src/api/client"
 import { useAuthStore } from "../../../src/stores/authStore"
@@ -139,24 +139,26 @@ export default function ClassDetailScreen() {
           </View>
         }
         renderItem={({ item }: { item: Student }) => (
-          <View style={styles.studentCard}>
-            <View style={styles.studentAvatar}>
-              <Text style={styles.studentInitial}>{item.name.charAt(0).toUpperCase()}</Text>
+          <TouchableOpacity onPress={() => router.push(`/students/${item.id}` as any)}>
+            <View style={styles.studentCard}>
+              <View style={styles.studentAvatar}>
+                <Text style={styles.studentInitial}>{item.name.charAt(0).toUpperCase()}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.studentName}>{item.name}</Text>
+                <Text style={styles.studentMeta}>
+                  {item.rollNumber ? `Roll ${item.rollNumber}` : "No roll number"}
+                  {item.parentName ? `  -  ${item.parentName}` : ""}
+                </Text>
+                {item.parentPhone && (
+                  <View style={styles.phoneRow}>
+                    <Ionicons name="call-outline" size={12} color={colors.textFaint} />
+                    <Text style={styles.studentPhone}>{item.parentPhone}</Text>
+                  </View>
+                )}
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.studentName}>{item.name}</Text>
-              <Text style={styles.studentMeta}>
-                {item.rollNumber ? `Roll ${item.rollNumber}` : "No roll number"}
-                {item.parentName ? `  -  ${item.parentName}` : ""}
-              </Text>
-              {item.parentPhone && (
-                <View style={styles.phoneRow}>
-                  <Ionicons name="call-outline" size={12} color={colors.textFaint} />
-                  <Text style={styles.studentPhone}>{item.parentPhone}</Text>
-                </View>
-              )}
-            </View>
-          </View>
+          </TouchableOpacity>
         )}
       />
 

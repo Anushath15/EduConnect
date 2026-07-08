@@ -70,14 +70,17 @@ export default function AppLayout() {
           ),
         }}
       />
-    <Tabs.Screen
-        name="announcements"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="resources"
-        options={{ href: null }}
-      />
-      </Tabs>
+      {/* Hidden screens — reachable via router.push() but not shown in tab bar */}
+      <Tabs.Screen name="announcements"  options={{ href: null }} />
+      <Tabs.Screen name="resources"      options={{ href: null }} />
+      <Tabs.Screen name="subjects"       options={{ href: null }} />
+      <Tabs.Screen name="periods"        options={{ href: null }} />
+      <Tabs.Screen name="audit-logs"     options={{ href: null }} />
+      <Tabs.Screen name="attendance"     options={{ href: null }} />
+      <Tabs.Screen name="teachers/[id]"  options={{ href: null }} />
+      <Tabs.Screen name="classes/index"  options={{ href: null }} />
+      <Tabs.Screen name="classes/[id]"   options={{ href: null }} />
+      <Tabs.Screen name="students/[id]"  options={{ href: null }} />
+    </Tabs>
   )
 }

@@ -3,17 +3,25 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from "rea
 import { router } from "expo-router"
 import { useAuthStore } from "../../src/stores/authStore"
 import { colors, spacing, radius, typography } from "../../src/theme"
-import { ROLE_LABELS } from "@educonnect/shared"
+import { ROLE_LABELS, SCHOOL_CONFIG_ROLES, AUDIT_VIEW_ROLES } from "@educonnect/shared"
 
-const CARDS = [
+const BASE_CARDS = [
   { title: "Timetable",       desc: "View and manage class schedules",      route: "/timetable" },
   { title: "Teachers",        desc: "Manage teachers and assignments",       route: "/teachers" },
   { title: "Classes",         desc: "View class rosters and details",        route: "/classes" },
   { title: "Substitutions",   desc: "Handle teacher absences",              route: "/substitutions" },
   { title: "Swap Requests",   desc: "Review and respond to period swaps",   route: "/swap-requests" },
   { title: "Announcements",   desc: "School-wide notices and updates",      route: "/announcements" },
-  { title: "Resources",      desc: "Book labs, grounds and shared spaces",  route: "/resources" },
+  { title: "Resources",       desc: "Book labs, grounds and shared spaces", route: "/resources" },
 ]
+
+const ADMIN_CARDS = [
+  { title: "Subjects",  desc: "Manage subject catalog",          route: "/subjects" },
+  { title: "Periods",   desc: "Configure daily period schedule", route: "/periods" },
+]
+
+const AUDIT_CARD = { title: "Audit Logs", desc: "System activity and change history", route: "/audit-logs" }
+
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -24,6 +32,13 @@ function getGreeting() {
 
 export default function DashboardScreen() {
   const { user, logout } = useAuthStore()
+  const role = user?.role ?? ""
+
+  const cards = [
+    ...BASE_CARDS,
+    ...(SCHOOL_CONFIG_ROLES.includes(role as any) ? ADMIN_CARDS : []),
+    ...(AUDIT_VIEW_ROLES?.includes(role as any) ? [AUDIT_CARD] : []),
+  ]
 
   const handleLogout = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -46,7 +61,7 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       </View>
       <ScrollView contentContainerStyle={s.grid}>
-        {CARDS.map((card) => (
+        {cards.map((card) => (
           <TouchableOpacity
             key={card.title}
             style={s.card}
@@ -60,6 +75,7 @@ export default function DashboardScreen() {
     </View>
   )
 }
+
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },

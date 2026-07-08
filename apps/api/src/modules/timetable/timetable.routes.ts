@@ -6,7 +6,11 @@ import { requirePermission } from "../../core/middleware/rbac.middleware.js"
 export async function timetableRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post(
     "/v1/timetable/generate",
-    { preHandler: [authenticateWithTenant, requirePermission("timetable:generate")] },
+    {
+      preHandler: [authenticateWithTenant, requirePermission("timetable:generate")],
+      // Timetable generation is expensive: 5 calls per school per 10 min
+      config: { rateLimit: { max: 5, timeWindow: "10 minutes", keyGenerator: (req: any) => req.user?.schoolId ?? req.ip } },
+    },
     async (request, reply) => {
       const { weekStartDate } = request.body as { weekStartDate: string }
       if (!weekStartDate) {

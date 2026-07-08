@@ -4,6 +4,7 @@ import {
   StyleSheet, ActivityIndicator, KeyboardAvoidingView,
   Platform, Alert,
 } from "react-native"
+import { router } from "expo-router"
 import { useAuthStore } from "../../src/stores/authStore"
 
 export default function LoginScreen() {
@@ -65,6 +66,12 @@ export default function LoginScreen() {
               <Text style={styles.buttonText}>Sign In</Text>
             )}
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.forgotLink}
+            onPress={() => router.push("/(auth)/forgot-password")}
+          >
+            <Text style={styles.forgotText}>Forgot Password?</Text>
+          </TouchableOpacity>
         </View>
         <Text style={styles.footer}>EduConnect 2026 - Tamil Nadu Schools</Text>
       </View>
@@ -84,5 +91,8 @@ const styles = StyleSheet.create({
   button: { backgroundColor: "#6366F1", borderRadius: 12, padding: 16, alignItems: "center", marginTop: 16 },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  forgotLink: { alignItems: "center", marginTop: 12, paddingVertical: 4 },
+  forgotText: { color: "#6366F1", fontSize: 14, fontWeight: "600" },
   footer: { textAlign: "center", color: "#475569", fontSize: 12, marginTop: 32 },
 })
+

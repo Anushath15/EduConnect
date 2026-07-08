@@ -1,4 +1,10 @@
-import "./config/env.js"
+import dotenv from "dotenv"
+import { resolve, dirname } from "path"
+import { fileURLToPath } from "url"
+const __filename = fileURLToPath(import.meta.url)
+const __rootDir = resolve(dirname(__filename), "../../../")
+dotenv.config({ path: resolve(__rootDir, ".env") })
+
 import { buildApp } from "./app.js"
 import { env } from "./config/env.js"
 

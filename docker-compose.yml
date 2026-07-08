@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 
+      POSTGRES_PASSWORD: password
       POSTGRES_DB: educonnect
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -23,7 +23,7 @@ services:
     image: redis:7-alpine
     container_name: educonnect_redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass 
+    command: redis-server --appendonly yes --requirepass password
     volumes:
       - redis_data:/data
     ports:

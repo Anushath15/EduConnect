@@ -56,6 +56,9 @@ export const SWAP_REQUEST_ROLES = ["PRINCIPAL", "VICE_PRINCIPAL", "COORDINATOR",
 // Matches announcement:create.
 export const ANNOUNCEMENT_CREATE_ROLES = ["PRINCIPAL", "VICE_PRINCIPAL", "COORDINATOR", "CLASS_TEACHER", "OFFICE_STAFF"] as const
 
+// Matches audit:view — only senior leadership and coordinators can see the audit trail.
+export const AUDIT_VIEW_ROLES = ["PRINCIPAL", "VICE_PRINCIPAL", "COORDINATOR"] as const
+
 // Matches resource:book — everyone except INTERN.
 export const RESOURCE_BOOK_ROLES = [
   "PRINCIPAL", "VICE_PRINCIPAL", "COORDINATOR", "ADMINISTRATOR",

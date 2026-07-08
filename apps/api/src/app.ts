@@ -21,12 +21,12 @@ import { swapRoutes }          from "./modules/swap/swap.routes.js"
 import { announcementsRoutes } from "./modules/announcements/announcements.routes.js"
 import { resourceRoutes }      from "./modules/resources/resource.routes.js"
 import { attendanceRoutes }    from "./modules/attendance/attendance.routes.js"
+import { auditRoutes }         from "./modules/audit/audit.routes.js"
+import { auditHook }           from "./core/middleware/audit.middleware.js"
  
 export async function buildApp(): Promise<FastifyInstance> {
   const fastify = Fastify({
-    logger: env.NODE_ENV === "development"
-      ? { transport: { target: "pino-pretty", options: { colorize: true } } }
-      : true,
+    logger: true,
   })
  
   await fastify.register(swaggerPlugin)
@@ -88,6 +88,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   await fastify.register(announcementsRoutes)
   await fastify.register(resourceRoutes)
   await fastify.register(attendanceRoutes)
+  await fastify.register(auditRoutes)
+
+  // Audit hook: logs all mutating API calls asynchronously
+  fastify.addHook("onResponse", auditHook)
  
   return fastify
 }

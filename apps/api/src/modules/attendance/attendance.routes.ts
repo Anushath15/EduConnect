@@ -164,7 +164,7 @@ export async function attendanceRoutes(fastify: FastifyInstance) {
     const cls = await db.class.findFirst({ where: { id: classId, schoolId } })
     if (!cls) throw Errors.NOT_FOUND("Class")
  
-    const where: Parameters<typeof db.attendance.findMany>[0]["where"] = { classId, schoolId }
+    const where: any = { classId, schoolId }
     if (query.date)     where.date     = new Date(query.date)
     if (query.periodId) where.periodId = query.periodId
  

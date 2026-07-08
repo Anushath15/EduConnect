@@ -4,6 +4,20 @@ import { AppError } from "../../core/errors/AppError.js"
 import { TimetableGenerator } from "./engine/generator.js"
 import type { TimetableConstraints } from "./engine/types.js"
 
+// Default teacher workload values (applied when isOverrideActive is false or config is missing)
+const DEFAULT_MAX_PERIODS_PER_WEEK   = 40
+const DEFAULT_MAX_PERIODS_PER_DAY    = 8
+const DEFAULT_MAX_CONSECUTIVE        = 3
+const DEFAULT_PREFERRED_DAYS_OFF: string[] = []
+
+interface TeacherConfig {
+  isOverrideActive?:    boolean
+  maxPeriodsPerWeek?:   number
+  maxPeriodsPerDay?:    number
+  maxConsecutivePeriods?: number
+  preferredDaysOff?:    string[]
+}
+
 export class TimetableService {
 
   async generate(schoolId: string, weekStartDate: Date) {
@@ -16,14 +30,14 @@ export class TimetableService {
     }
 
     // Load all constraint data in parallel — avoids N sequential round trips.
-    const [teachers, classes, subjects, periods, teacherSubjects] = await Promise.all([
+    const [teachers, classes, subjects, periods, teacherSubjects, school] = await Promise.all([
       db.user.findMany({
         where: {
           schoolId,
           isActive: true,
           role: { in: ["CLASS_TEACHER","SUBJECT_TEACHER","TEMP_TEACHER","COORDINATOR","VICE_PRINCIPAL"] },
         },
-        select: { id: true, name: true },
+        select: { id: true, name: true, teacherConfig: true },
       }),
       db.class.findMany({
         where:  { schoolId, isActive: true },
@@ -42,6 +56,10 @@ export class TimetableService {
         where:  { teacher: { schoolId } },
         select: { teacherId: true, subjectId: true },
       }),
+      db.school.findUnique({
+        where:  { id: schoolId },
+        select: { config: true },
+      }),
     ])
 
     // Build teacherId → subjectId[] map for the generator.
@@ -59,21 +77,34 @@ export class TimetableService {
       )
     }
 
+    // Derive working days from school config, defaulting to Mon-Sat
+    const schoolConfig = school?.config as { workingDays?: string[] } | null
+    const workingDays  = schoolConfig?.workingDays ?? ["MON","TUE","WED","THU","FRI","SAT"]
+
+    // Parse teacherConfig JSON for each teacher; apply defaults if override not active
     const constraints: TimetableConstraints = {
-      teachers: teachers.map((t) => ({
-        id:              t.id,
-        name:            t.name,
-        subjectIds:      teacherSubjectMap.get(t.id) ?? [],
-        maxPeriodsPerWeek: 40,
-      })),
-      classes,
-      subjects,
+      teachers: teachers.map((t) => {
+        const cfg = (t.teacherConfig ?? {}) as TeacherConfig
+        const useOverride = cfg.isOverrideActive === true
+        return {
+          id:                   t.id,
+          name:                 t.name,
+          subjectIds:           teacherSubjectMap.get(t.id) ?? [],
+          maxPeriodsPerWeek:    useOverride ? (cfg.maxPeriodsPerWeek   ?? DEFAULT_MAX_PERIODS_PER_WEEK) : DEFAULT_MAX_PERIODS_PER_WEEK,
+          maxPeriodsPerDay:     useOverride ? (cfg.maxPeriodsPerDay     ?? DEFAULT_MAX_PERIODS_PER_DAY)  : DEFAULT_MAX_PERIODS_PER_DAY,
+          maxConsecutivePeriods:useOverride ? (cfg.maxConsecutivePeriods ?? DEFAULT_MAX_CONSECUTIVE)     : DEFAULT_MAX_CONSECUTIVE,
+          preferredDaysOff:     useOverride ? (cfg.preferredDaysOff     ?? DEFAULT_PREFERRED_DAYS_OFF)   : DEFAULT_PREFERRED_DAYS_OFF,
+        }
+      }),
+      classes: classes.map(c => ({ ...c, section: c.section ?? "" })),
+      subjects: subjects.map(s => ({ ...s, code: s.code ?? "" })),
       periods,
-      workingDays:     ["MON","TUE","WED","THU","FRI","SAT"],
+      workingDays,
       teacherSubjectMap,
     }
 
     const result = new TimetableGenerator(constraints).generate()
+
 
     if (result.slots.length === 0) {
       throw new AppError(
