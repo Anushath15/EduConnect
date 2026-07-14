@@ -13,9 +13,11 @@ POSTGRES_NAMING_CONVENTION = {
 metadata = MetaData(naming_convention=POSTGRES_NAMING_CONVENTION)
 
 
-class Base(DeclarativeBase, MappedAsDataclass):
+class Base(MappedAsDataclass, DeclarativeBase):
     """
-    SQLAlchemy Base class.
-    Uses MappedAsDataclass for native static type checking and dataclass features.
+    SQLAlchemy Base class combining MappedAsDataclass and DeclarativeBase.
+    Correct ordering: MappedAsDataclass must come BEFORE DeclarativeBase.
+    All Mixin classes used in models must ALSO subclass MappedAsDataclass.
     """
+
     metadata = metadata

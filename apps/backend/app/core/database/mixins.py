@@ -1,14 +1,15 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import DateTime, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+
+from sqlalchemy import Boolean, DateTime
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
-from uuid7 import uuid7
+from sqlalchemy.orm import Mapped, MappedAsDataclass, mapped_column
+from uuid_extensions import uuid7  # type: ignore[import-untyped]
 
 
 def generate_uuid7() -> uuid.UUID:
     """Generates a UUIDv7 for better database index locality."""
-    return uuid7()
+    return uuid.UUID(str(uuid7()))
 
 
 def utc_now() -> datetime:
@@ -16,57 +17,70 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-class UUIDMixin:
-    """Mixin that adds a UUIDv7 primary key column."""
-    
+class UUIDMixin(MappedAsDataclass):
+    """
+    Mixin that adds a UUIDv7 primary key column.
+    Inherits MappedAsDataclass so SQLAlchemy handles it correctly.
+    """
+
     id: Mapped[uuid.UUID] = mapped_column(
-        PGUUID(as_uuid=True), 
-        primary_key=True, 
-        default=generate_uuid7,
-        init=False
+        PGUUID(as_uuid=True),
+        primary_key=True,
+        insert_default=generate_uuid7,
+        default_factory=generate_uuid7,
+        init=False,
     )
 
 
-class TimestampMixin:
-    """Mixin that adds created_at and updated_at columns."""
-    
+class TimestampMixin(MappedAsDataclass):
+    """
+    Mixin that adds UTC-aware created_at and updated_at columns.
+    Inherits MappedAsDataclass so SQLAlchemy handles it correctly.
+    """
+
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), 
-        default=utc_now,
+        DateTime(timezone=True),
+        insert_default=utc_now,
+        default_factory=utc_now,
         nullable=False,
-        init=False
+        init=False,
     )
-    
+
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=utc_now,
+        insert_default=utc_now,
         onupdate=utc_now,
+        default_factory=utc_now,
         nullable=False,
-        init=False
+        init=False,
     )
 
 
-class SoftDeleteMixin:
+class SoftDeleteMixin(MappedAsDataclass):
     """
-    Mixin that adds soft delete capabilities. 
-    Only apply this to specific entities that require recovery or audit history (e.g., Users, Teachers).
+    Mixin that adds soft delete capabilities.
+    Only apply to entities where recovery or audit history has value.
+    Entities: Users, Students, Teachers, Classes, Subjects, Resources, Announcements.
+    NOT for: junction tables, audit logs, event tables, cache tables.
     """
-    
+
     is_deleted: Mapped[bool] = mapped_column(
-        Boolean, 
-        default=False, 
+        Boolean,
+        insert_default=False,
+        default=False,
         nullable=False,
-        init=False
+        init=False,
     )
-    
+
     deleted_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), 
-        default=None, 
+        DateTime(timezone=True),
+        insert_default=None,
+        default=None,
         nullable=True,
-        init=False
+        init=False,
     )
 
     def soft_delete(self) -> None:
-        """Marks the entity as deleted."""
+        """Marks the entity as logically deleted."""
         self.is_deleted = True
         self.deleted_at = utc_now()

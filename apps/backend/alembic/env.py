@@ -6,9 +6,9 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
-
 from app.core.config import get_settings
 from app.core.database.base import Base
+
 # Import your models here to register them with Base, e.g.:
 # from app.modules.users.models import User
 

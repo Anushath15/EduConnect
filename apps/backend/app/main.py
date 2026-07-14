@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 
+from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.logging import setup_logging
-from app.api.v1.router import api_router
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -27,13 +27,14 @@ def create_app() -> FastAPI:
         generate_unique_id_function=custom_generate_unique_id,
         contact={
             "name": "EduConnect Platform Team",
-        }
+        },
     )
 
     # Include Routers
     app.include_router(api_router, prefix=settings.api_v1_str)
 
     return app
+
 
 # The global app instance is created here for ASGI servers like Uvicorn
 app: FastAPI = create_app()
