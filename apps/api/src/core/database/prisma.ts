@@ -1,7 +1,9 @@
 import { PrismaClient } from "@prisma/client"
+
 import { env } from "../../config/env.js"
 
 declare global {
+  // eslint-disable-next-line no-var
   var __prisma: PrismaClient | undefined
 }
 
@@ -12,11 +14,9 @@ export const db = global.__prisma ?? new PrismaClient({
 if (env.NODE_ENV !== "production") global.__prisma = db
 
 process.on("SIGTERM", async () => {
-  console.log("SIGTERM received, disconnecting Prisma...")
-  await db.$disconnect()
+  await db.$disconnect().catch(() => {})
 })
 
 process.on("SIGINT", async () => {
-  console.log("SIGINT received, disconnecting Prisma...")
-  await db.$disconnect()
+  await db.$disconnect().catch(() => {})
 })

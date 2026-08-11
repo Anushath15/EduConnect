@@ -1,31 +1,39 @@
 import { FastifyInstance } from "fastify"
+
 import { db } from "./database/prisma.js"
 import { redis } from "./redis/client.js"
 
-export async function healthCheck(fastify: FastifyInstance) {
-  fastify.get("/health", async () => {
+/**
+ * Health check with real DB + Redis pings. Returns 503 if either is unhealthy.
+ * Registered at /health with no auth required.
+ */
+export async function healthCheck(fastify: FastifyInstance): Promise<void> {
+  fastify.get("/health", async (_request, reply) => {
     const checks = {
       database: false,
-      redis: false,
+      redis:    false,
       timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
+      uptime:    process.uptime(),
     }
-    
+
     try {
       await db.$queryRaw`SELECT 1`
       checks.database = true
     } catch (err: any) {
-      fastify.log.error("Database health check failed: " + err.message)
+      fastify.log.error({ err: err?.message }, "Database health check failed")
     }
-    
+
     try {
-      await redis.ping()
-      checks.redis = true
+      const pong = await redis.ping()
+      checks.redis = pong === "PONG"
     } catch (err: any) {
-      fastify.log.error("Redis health check failed: " + err.message)
+      fastify.log.error({ err: err?.message }, "Redis health check failed")
     }
-    
+
     const status = checks.database && checks.redis ? 200 : 503
-    return { status: status === 200 ? "healthy" : "unhealthy", checks }
+    return reply.status(status).send({
+      status: status === 200 ? "healthy" : "unhealthy",
+      checks,
+    })
   })
 }

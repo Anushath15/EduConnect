@@ -1,6 +1,8 @@
 import { FastifyRequest, FastifyReply } from "fastify"
+
 import { db } from "../database/prisma.js"
 import { Errors } from "../errors/AppError.js"
+
 import { authenticate } from "./auth.middleware.js"
 
 export async function authenticateWithTenant(

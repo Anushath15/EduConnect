@@ -1,4 +1,5 @@
 import { Redis } from "ioredis"
+
 import { env } from "../../config/env.js"
 
 export const redis = new Redis(env.REDIS_URL, {
@@ -10,6 +11,11 @@ export const redis = new Redis(env.REDIS_URL, {
   lazyConnect: false,
 })
 
-redis.on("connect",      () => console.log("Redis connected"))
-redis.on("error",        (err: Error) => console.error("Redis error: " + err.message))
-redis.on("reconnecting", () => console.log("Redis reconnecting..."))
+redis.on("error", (err: Error) => {
+  // Don't crash the process on transient Redis errors; the API will surface
+  // them at request time via the auth/permission middleware.
+  if ((err as any).code !== "ECONNREFUSED") {
+    // eslint-disable-next-line no-console
+    console.error("Redis error: " + err.message)
+  }
+})

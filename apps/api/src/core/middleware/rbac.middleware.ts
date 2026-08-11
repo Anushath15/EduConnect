@@ -1,4 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify"
+
 import { hasPermission } from "../permissions/checker.js"
 import { Errors } from "../errors/AppError.js"
  
