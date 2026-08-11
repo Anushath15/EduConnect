@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify"
 import { z } from "zod"
+
 import { db } from "../../core/database/prisma.js"
 import { Errors } from "../../core/errors/AppError.js"
 import { authenticateWithTenant } from "../../core/middleware/tenant.middleware.js"

@@ -1,6 +1,8 @@
 import type { DayOfWeek } from "@prisma/client"
+
 import { db } from "../../core/database/prisma.js"
 import { AppError } from "../../core/errors/AppError.js"
+
 import { TimetableGenerator } from "./engine/generator.js"
 import type { TimetableConstraints } from "./engine/types.js"
 

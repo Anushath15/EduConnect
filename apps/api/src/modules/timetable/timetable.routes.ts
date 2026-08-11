@@ -1,7 +1,9 @@
 import { FastifyInstance } from "fastify"
-import { timetableService } from "./timetable.service.js"
+
 import { authenticateWithTenant } from "../../core/middleware/tenant.middleware.js"
 import { requirePermission } from "../../core/middleware/rbac.middleware.js"
+
+import { timetableService } from "./timetable.service.js"
 
 export async function timetableRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post(

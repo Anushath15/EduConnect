@@ -1,12 +1,15 @@
+import { randomBytes } from "crypto"
+
+import { z } from "zod"
 import { type FastifyInstance } from "fastify"
-import { z }             from "zod"
-import { randomBytes }   from "crypto"
-import argon2            from "argon2"
-import { authService }   from "./auth.service.js"
-import { authenticate }  from "../../core/middleware/auth.middleware.js"
-import { db }            from "../../core/database/prisma.js"
-import { redis }         from "../../core/redis/client.js"
-import { env }           from "../../config/env.js"
+import { hash, argon2id } from "argon2"
+
+import { authenticate } from "../../core/middleware/auth.middleware.js"
+import { db } from "../../core/database/prisma.js"
+import { redis } from "../../core/redis/client.js"
+import { env } from "../../config/env.js"
+
+import { authService } from "./auth.service.js"
  
 // ── Shared password schema ────────────────────────────────────────────────────
  
@@ -229,7 +232,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
         })
       }
  
-      const passwordHash = await argon2.hash(newPassword, { type: argon2.argon2id })
+      const passwordHash = await hash(newPassword, { type: argon2id })
  
       await db.$transaction(async (tx) => {
         await tx.user.update({ where: { id: userId }, data: { passwordHash } })

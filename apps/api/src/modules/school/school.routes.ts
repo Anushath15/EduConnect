@@ -1,8 +1,9 @@
 import { FastifyInstance } from "fastify"
+import { z } from "zod"
+
 import { authenticateWithTenant } from "../../core/middleware/tenant.middleware.js"
 import { requirePermission } from "../../core/middleware/rbac.middleware.js"
 import { db } from "../../core/database/prisma.js"
-import { z } from "zod"
 
 const schoolConfigSchema = z.object({
   periodsPerDay: z.number().min(1).max(12),

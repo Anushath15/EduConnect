@@ -1,8 +1,9 @@
 import { FastifyInstance } from "fastify"
+import { z } from "zod"
+
 import { authenticateWithTenant } from "../../core/middleware/tenant.middleware.js"
 import { requirePermission } from "../../core/middleware/rbac.middleware.js"
 import { db } from "../../core/database/prisma.js"
-import { z } from "zod"
 
 const studentSchema = z.object({
   classId:         z.string().uuid("classId must be a valid UUID"),

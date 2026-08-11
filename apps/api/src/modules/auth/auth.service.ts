@@ -1,10 +1,11 @@
-import argon2 from "argon2"
-import { db }                               from "../../core/database/prisma.js"
-import { redis }                            from "../../core/redis/client.js"
-import { signAccessToken }                  from "../../utils/jwt.js"
-import { generateRefreshToken, hashToken }  from "../../utils/crypto.js"
-import { Errors, AppError }                 from "../../core/errors/AppError.js"
-import type { UserRole }                    from "@prisma/client"
+import { hash as argonHash, verify as argonVerify, argon2id } from "argon2"
+import type { UserRole } from "@prisma/client"
+
+import { db } from "../../core/database/prisma.js"
+import { redis } from "../../core/redis/client.js"
+import { signAccessToken } from "../../utils/jwt.js"
+import { generateRefreshToken, hashToken } from "../../utils/crypto.js"
+import { Errors, AppError } from "../../core/errors/AppError.js"
  
 // ── Shared token-issuance helper ─────────────────────────────────────────────
  
@@ -55,7 +56,7 @@ export class AuthService {
     if (alreadyExists) throw Errors.DUPLICATE("Email")
  
     // Hash outside the transaction — holds no DB connection during CPU work.
-    const passwordHash = await argon2.hash(input.password, { type: argon2.argon2id })
+    const passwordHash = await argonHash(input.password, { type: argon2id })
  
     const { school, user } = await db.$transaction(async (tx) => {
       // Race-condition guard: re-check inside the transaction.
@@ -124,7 +125,7 @@ export class AuthService {
       throw new AppError("ACCOUNT_LOCKED", "Account locked. Try again later.", 401)
     }
  
-    const valid = await argon2.verify(user.passwordHash, password)
+    const valid = await argonVerify(user.passwordHash, password)
     if (!valid) {
       const count = user.failedLoginCount + 1
       await db.user.update({
