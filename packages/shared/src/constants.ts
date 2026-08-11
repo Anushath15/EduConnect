@@ -1,39 +1,116 @@
+/**
+ * Single source of truth for role → permission mapping.
+ *
+ * This file is imported by:
+ *   - apps/api (runtime permission checks via `requirePermission(...)`)
+ *   - apps/mobile (dashboard role-based card rendering)
+ *   - apps/web  (sidebar / role-aware UI)
+ *
+ * Permission naming convention: `resource:action[:scope]`
+ *   `timetable:view:all`, `student:create`, `substitution:assign`, etc.
+ *
+ * Adding a permission:
+ *   1. Add it to the appropriate role(s) below.
+ *   2. Add `requirePermission("your:permission")` to the route in apps/api.
+ *   3. Use `hasPermission(role, "your:permission")` in mobile/web to gate UI.
+ */
 export const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
   PRINCIPAL: [
-    "timetable:view:all","timetable:edit","timetable:generate","timetable:lock",
-    "substitution:assign","substitution:accept","swap:request","swap:respond",
-    "student:view","student:create","student:edit","staff:create","staff:edit","permission:manage:roles",
-    "permission:manage:individual","resource:book","school:config",
-    "school:reports","announcement:create","audit:view",
+    "timetable:view:all", "timetable:edit", "timetable:generate", "timetable:lock",
+    "substitution:assign", "substitution:accept",
+    "swap:request", "swap:respond",
+    "student:view", "student:create", "student:edit", "student:delete",
+    "staff:view", "staff:create", "staff:edit",
+    "attendance:mark", "attendance:view",
+    "permission:manage:roles", "permission:manage:individual",
+    "resource:book", "school:config", "school:reports",
+    "announcement:create", "announcement:edit", "announcement:delete",
+    "audit:view",
   ],
+
   VICE_PRINCIPAL: [
-    "timetable:view:all","timetable:edit","timetable:generate","timetable:lock",
-    "substitution:assign","substitution:accept","swap:request","swap:respond",
-    "student:view","student:create","student:edit","staff:create","staff:edit","resource:book",
-    "school:reports","announcement:create","audit:view",
+    "timetable:view:all", "timetable:edit", "timetable:generate", "timetable:lock",
+    "substitution:assign", "substitution:accept",
+    "swap:request", "swap:respond",
+    "student:view", "student:create", "student:edit",
+    "staff:view", "staff:create", "staff:edit",
+    "attendance:mark", "attendance:view",
+    "resource:book", "school:reports",
+    "announcement:create", "announcement:edit", "announcement:delete",
+    "audit:view",
   ],
+
   COORDINATOR: [
-    "substitution:assign","substitution:accept","timetable:view:all",
-    "student:view","swap:request","swap:respond","announcement:create",
-    "school:reports","audit:view",
+    "timetable:view:all",
+    "substitution:assign", "substitution:accept",
+    "swap:request", "swap:respond",
+    "student:view",
+    "staff:view",
+    "attendance:view",
+    "announcement:create", "announcement:edit", "announcement:delete",
+    "school:reports", "audit:view",
   ],
+
   ADMINISTRATOR: [
-    "school:config","timetable:generate","timetable:edit","timetable:view:all",
-    "staff:create","staff:edit","student:view","student:create","student:edit","resource:book","school:reports",
+    "timetable:view:all", "timetable:generate", "timetable:edit",
+    "student:view", "student:create", "student:edit",
+    "staff:view", "staff:create", "staff:edit",
+    "attendance:view",
+    "resource:book", "school:config", "school:reports",
   ],
+
   CLASS_TEACHER: [
-    "timetable:view:all","substitution:accept","swap:request","swap:respond",
-    "student:view","resource:book","announcement:create",
+    "timetable:view:all",
+    "substitution:accept",
+    "swap:request", "swap:respond",
+    "student:view",
+    "attendance:mark", "attendance:view",
+    "resource:book", "announcement:create",
   ],
+
   SUBJECT_TEACHER: [
-    "timetable:view:all","substitution:accept","swap:request","swap:respond","resource:book",
+    "timetable:view:all",
+    "substitution:accept",
+    "swap:request", "swap:respond",
+    "attendance:mark", "attendance:view",
+    "resource:book",
   ],
-  TEMP_TEACHER: ["timetable:view:all","substitution:accept","resource:book"],
-  INTERN: [],
-  OFFICE_STAFF: ["resource:book","announcement:create","student:create","student:edit"],
+
+  TEMP_TEACHER: [
+    "timetable:view:all",
+    "substitution:accept",
+    "attendance:view",
+    "resource:book",
+  ],
+
+  INTERN: [
+    "timetable:view:all",
+    "attendance:view",
+  ],
+
+  OFFICE_STAFF: [
+    "student:create", "student:edit",
+    "attendance:view",
+    "resource:book", "announcement:create",
+  ],
 }
 
-export function hasPermission(role: string, permission: string): boolean {
+export const ALL_ROLES = [
+  "PRINCIPAL",
+  "VICE_PRINCIPAL",
+  "COORDINATOR",
+  "ADMINISTRATOR",
+  "CLASS_TEACHER",
+  "SUBJECT_TEACHER",
+  "TEMP_TEACHER",
+  "INTERN",
+  "OFFICE_STAFF",
+] as const
+
+export type Role = (typeof ALL_ROLES)[number]
+
+export function hasPermission(role: string | null | undefined, permission: string): boolean {
+  if (!role) return false
   return DEFAULT_ROLE_PERMISSIONS[role]?.includes(permission) ?? false
 }
 
@@ -41,7 +118,6 @@ export function hasPermission(role: string, permission: string): boolean {
 export const STAFF_EDIT_ROLES = ["PRINCIPAL", "VICE_PRINCIPAL", "ADMINISTRATOR"] as const
 
 // Matches school:config — Principal + Administrator only.
-// Vice Principal deliberately excluded (matches defaults.ts).
 export const SCHOOL_CONFIG_ROLES = ["PRINCIPAL", "ADMINISTRATOR"] as const
 
 // Matches student:create / student:edit.
@@ -51,10 +127,14 @@ export const STUDENT_EDIT_ROLES = ["PRINCIPAL", "VICE_PRINCIPAL", "ADMINISTRATOR
 export const SUBSTITUTION_ASSIGN_ROLES = ["PRINCIPAL", "VICE_PRINCIPAL", "COORDINATOR"] as const
 
 // Matches swap:request.
-export const SWAP_REQUEST_ROLES = ["PRINCIPAL", "VICE_PRINCIPAL", "COORDINATOR", "CLASS_TEACHER", "SUBJECT_TEACHER"] as const
+export const SWAP_REQUEST_ROLES = [
+  "PRINCIPAL", "VICE_PRINCIPAL", "COORDINATOR", "CLASS_TEACHER", "SUBJECT_TEACHER",
+] as const
 
 // Matches announcement:create.
-export const ANNOUNCEMENT_CREATE_ROLES = ["PRINCIPAL", "VICE_PRINCIPAL", "COORDINATOR", "CLASS_TEACHER", "OFFICE_STAFF"] as const
+export const ANNOUNCEMENT_CREATE_ROLES = [
+  "PRINCIPAL", "VICE_PRINCIPAL", "COORDINATOR", "CLASS_TEACHER", "OFFICE_STAFF",
+] as const
 
 // Matches audit:view — only senior leadership and coordinators can see the audit trail.
 export const AUDIT_VIEW_ROLES = ["PRINCIPAL", "VICE_PRINCIPAL", "COORDINATOR"] as const
