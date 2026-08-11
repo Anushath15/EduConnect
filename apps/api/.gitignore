@@ -1,0 +1,14 @@
+# Compiled output
+dist/
+
+# Local env overrides
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# Test artifacts
+coverage/
+*.log

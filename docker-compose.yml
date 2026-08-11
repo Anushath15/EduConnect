@@ -1,5 +1,19 @@
 version: '3.8'
 
+# ───────────────────────────────────────────────────────────────────────────────
+#  EduConnect local-dev stack.
+#
+#  ALL secrets are injected via the host environment (or an .env file at the
+#  project root that is gitignored). There are no defaults committed.
+#
+#  Required environment variables (see .env.example for placeholders):
+#    POSTGRES_PASSWORD
+#    REDIS_PASSWORD
+#    JWT_ACCESS_SECRET     (≥32 chars)
+#    JWT_REFRESH_SECRET    (≥32 chars)
+#    FRONTEND_URL
+# ───────────────────────────────────────────────────────────────────────────────
+
 services:
   postgres:
     image: postgres:15-alpine
@@ -7,7 +21,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: educonnect
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -23,13 +37,13 @@ services:
     image: redis:7-alpine
     container_name: educonnect_redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass password
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     volumes:
       - redis_data:/data
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -46,13 +60,14 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://postgres:@postgres:5432/educonnect
-      REDIS_URL: redis://:@redis:6379
-      JWT_ACCESS_SECRET: 
-      JWT_REFRESH_SECRET: 
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/educonnect
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required (min 32 chars)}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required (min 32 chars)}
       JWT_ACCESS_EXPIRES_IN: 15m
       JWT_REFRESH_EXPIRES_IN: 7d
-      FRONTEND_URL: http://localhost
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      WEB_ADMIN_URL: ${WEB_ADMIN_URL:-http://localhost:3001}
     depends_on:
       postgres:
         condition: service_healthy
