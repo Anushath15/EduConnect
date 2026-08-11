@@ -1,7 +1,9 @@
 import { FastifyInstance } from "fastify"
-import { auditService } from "./audit.service.js"
+
 import { authenticateWithTenant } from "../../core/middleware/tenant.middleware.js"
 import { requirePermission }      from "../../core/middleware/rbac.middleware.js"
+
+import { auditService } from "./audit.service.js"
 
 export async function auditRoutes(fastify: FastifyInstance): Promise<void> {
   /**

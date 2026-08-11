@@ -1,7 +1,9 @@
 import { FastifyInstance } from "fastify"
-import { substitutionService } from "./substitution.service.js"
+
 import { authenticateWithTenant } from "../../core/middleware/tenant.middleware.js"
 import { requirePermission } from "../../core/middleware/rbac.middleware.js"
+
+import { substitutionService } from "./substitution.service.js"
 
 export async function substitutionRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get(

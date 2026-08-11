@@ -1,8 +1,11 @@
 import { FastifyInstance } from "fastify"
-import { swapService } from "./swap.service.js"
+import { z } from "zod"
+
 import { authenticateWithTenant } from "../../core/middleware/tenant.middleware.js"
 import { requirePermission } from "../../core/middleware/rbac.middleware.js"
-import { z } from "zod"
+
+import { swapService } from "./swap.service.js"
+
 
 const createSwapSchema = z.object({
   requesterSlotId: z.string().uuid("requesterSlotId must be a valid UUID"),

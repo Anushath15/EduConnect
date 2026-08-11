@@ -47,37 +47,57 @@ export class SubstitutionService {
     })
     if (activeLock) throw Errors.TIMETABLE_LOCKED()
 
-    // Verify every slot actually belongs to this teacher, in this school,
-    // before creating substitution records against them.
-    const validSlots = await db.timetableSlot.findMany({
-      where: { id: { in: slotIds }, schoolId, teacherId: absentTeacherId },
-      select: { id: true },
-    })
-    const validSlotIds = new Set(validSlots.map(s => s.id))
-    const invalid = slotIds.filter(id => !validSlotIds.has(id))
-    if (invalid.length > 0) {
-      throw new AppError(
-        "INVALID_SLOT",
-        "One or more selected periods do not belong to this teacher in this school.",
-        400
-      )
-    }
+    // Atomic: verify all slots AND insert all substitution rows inside one
+    // transaction. If any slot fails the ownership check, no rows are inserted.
+    // If any insert fails, the transaction rolls back.
+    return db.$transaction(async (tx) => {
+      const validSlots = await tx.timetableSlot.findMany({
+        where: { id: { in: slotIds }, schoolId, teacherId: absentTeacherId },
+        select: { id: true },
+      })
+      const validSlotIds = new Set(validSlots.map(s => s.id))
+      const invalid = slotIds.filter(id => !validSlotIds.has(id))
+      if (invalid.length > 0) {
+        throw new AppError(
+          "INVALID_SLOT",
+          "One or more selected periods do not belong to this teacher in this school.",
+          400
+        )
+      }
 
-    const created = await Promise.all(
-      slotIds.map(slotId =>
-        db.substitution.create({
-          data: {
-            school:        { connect: { id: schoolId } },
-            timetableSlot: { connect: { id: slotId } },
-            absentTeacher: { connect: { id: absentTeacherId } },
-            assignedBy:    { connect: { id: assignedById } },
-            date,
-            status: "PENDING",
-          },
-        })
+      // Re-check inside the transaction to avoid the race where a second
+      // mark-absent call for the same slots passes the validation check
+      // before the first one inserts. There is no DB-level unique constraint
+      // on (timetableSlotId, date), so we enforce it here.
+      const existing = await tx.substitution.findMany({
+        where: { timetableSlotId: { in: slotIds }, date, status: { in: ["PENDING", "REQUESTED", "ACCEPTED"] } },
+        select: { timetableSlotId: true },
+      })
+      const alreadyMarked = new Set(existing.map(s => s.timetableSlotId))
+      const fresh = slotIds.filter(id => !alreadyMarked.has(id))
+      if (fresh.length === 0) {
+        throw new AppError(
+          "ALREADY_MARKED",
+          "All selected periods already have pending substitution requests.",
+          409
+        )
+      }
+
+      return Promise.all(
+        fresh.map(slotId =>
+          tx.substitution.create({
+            data: {
+              school:        { connect: { id: schoolId } },
+              timetableSlot: { connect: { id: slotId } },
+              absentTeacher: { connect: { id: absentTeacherId } },
+              assignedBy:    { connect: { id: assignedById } },
+              date,
+              status: "PENDING",
+            },
+          })
+        )
       )
-    )
-    return created
+    })
   }
 
   async assignSubstitute(
@@ -92,7 +112,6 @@ export class SubstitutionService {
       throw new AppError("ALREADY_ASSIGNED", "Substitution already assigned", 400)
     }
 
-    // Verify the proposed substitute is an active teacher in this same school.
     const substitute = await db.user.findFirst({
       where: { id: substituteTeacherId, schoolId, isActive: true },
     })

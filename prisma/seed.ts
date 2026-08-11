@@ -17,7 +17,7 @@ async function main() {
   })
   console.log("School created:", school.id)
 
-  const adminHash = await argon2.hash("Admin@12345")
+  const adminHash = await argon2.hash(process.env.SEED_ADMIN_PASSWORD ?? "Admin@12345")
   const admin = await db.user.create({
     data: {
       email: "admin@testschool.com",
@@ -30,7 +30,7 @@ async function main() {
   })
   console.log("Admin created:", admin.email)
 
-  const teacherHash = await argon2.hash("Teacher@12345")
+  const teacherHash = await argon2.hash(process.env.SEED_TEACHER_PASSWORD ?? "Teacher@12345")
   const teacher = await db.user.create({
     data: {
       email: "teacher@testschool.com",
@@ -46,7 +46,7 @@ async function main() {
   const principal = await db.user.create({
     data: {
       email: "principal@testschool.com",
-      passwordHash: await argon2.hash("Principal@12345"),
+      passwordHash: await argon2.hash(process.env.SEED_PRINCIPAL_PASSWORD ?? "Principal@12345"),
       name: "Test Principal",
       role: "PRINCIPAL",
       schoolId: school.id,
@@ -57,10 +57,10 @@ async function main() {
 
   console.log("Seeding complete.")
   console.log("")
-  console.log("Test credentials:")
-  console.log("  Admin:     admin@testschool.com     / Admin@12345")
-  console.log("  Teacher:   teacher@testschool.com   / Teacher@12345")
-  console.log("  Principal: principal@testschool.com / Principal@12345")
+  console.log("Test credentials (override via SEED_*_PASSWORD env vars):")
+  console.log("  Admin:     admin@testschool.com")
+  console.log("  Teacher:   teacher@testschool.com")
+  console.log("  Principal: principal@testschool.com")
 }
 
 main()

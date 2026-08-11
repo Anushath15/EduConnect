@@ -1,9 +1,10 @@
 import { FastifyInstance } from "fastify"
+import { z } from "zod"
+import type { UserRole } from "@prisma/client"
+
 import { authenticateWithTenant } from "../../core/middleware/tenant.middleware.js"
 import { requirePermission } from "../../core/middleware/rbac.middleware.js"
 import { db } from "../../core/database/prisma.js"
-import { z } from "zod"
-import type { UserRole } from "@prisma/client"
 
 const ROLE_VALUES = [
   "PRINCIPAL", "VICE_PRINCIPAL", "COORDINATOR", "ADMINISTRATOR",

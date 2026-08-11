@@ -1,10 +1,11 @@
 import type { FastifyInstance } from "fastify"
 import { z } from "zod"
+import type { AttendanceStatus } from "@prisma/client"
+
 import { db } from "../../core/database/prisma.js"
 import { Errors } from "../../core/errors/AppError.js"
 import { authenticateWithTenant } from "../../core/middleware/tenant.middleware.js"
 import { requirePermission } from "../../core/middleware/rbac.middleware.js"
-import type { AttendanceStatus } from "@prisma/client"
  
 // ── Zod schemas ───────────────────────────────────────────────────────────────
  
